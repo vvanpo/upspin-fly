@@ -1,0 +1,4 @@
+golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
+golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
+upspin.io v0.1.0 h1:NlG9u7dnJdq2fwBdMcR7Rv+x38cLQcfSzHYyKV2FAt8=
+upspin.io v0.1.0/go.mod h1:qnNQxNH3d9hKrp+IBKEyins4nkq4vGNTiHG6U5KC+KY=
