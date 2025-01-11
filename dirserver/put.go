@@ -15,8 +15,10 @@ If the Put entry...
   - the sequence number must be SeqNotExist or SeqIgnore
 - path last element is Access:
   - must be a regular file
+  - must have valid access syntax
 - path is <user>/Group:
   - must be a directory
+  - must have valid group syntax
 - path is within the subtree rooted at <user>/Group:
   - cannot be a link
   - path elements cannot resemble a username
