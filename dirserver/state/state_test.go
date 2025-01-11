@@ -16,12 +16,14 @@ func TestPutLookupDelete(t *testing.T) {
 	if err := s.create(ctx); err != nil {
 		t.Error(err)
 	}
-	tx, _ := db.Begin()
-	s.root(ctx, tx, "foo@example.com")
-	if err := tx.Commit(); err != nil {
+
+	if err := s.Put(ctx, &upspin.DirEntry{
+		Attr:   upspin.AttrDirectory,
+		Writer: "foo@example.com",
+		Name:   "foo@example.com/",
+	}); err != nil {
 		t.Error(err)
 	}
-
 	if err := s.Put(ctx, &upspin.DirEntry{
 		Attr:   upspin.AttrDirectory,
 		Writer: "foo@example.com",
@@ -29,6 +31,7 @@ func TestPutLookupDelete(t *testing.T) {
 	}); err != nil {
 		t.Error(err)
 	}
+
 	baz := &upspin.DirEntry{
 		Packing: upspin.PlainPack,
 		Blocks: []upspin.DirBlock{
