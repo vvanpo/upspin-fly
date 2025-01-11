@@ -14,8 +14,9 @@ CREATE TABLE log_operation (
 CREATE TABLE log_put (
 	operation REFERENCES log_operation PRIMARY KEY NOT NULL,
 	writer TEXT,
-	-- if not null, the other fields are not present
+	-- if not null, the below fields are not present
 	link TEXT,
+	-- if true, link and the below fields are not present
 	dir BOOLEAN,
 	packing INTEGER,
 	packdata BLOB

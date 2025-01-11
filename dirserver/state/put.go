@@ -9,10 +9,13 @@ import (
 	"upspin.io/upspin"
 )
 
-// Put appends a put operation to the log.
+// Put persists a put operation.
 func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 	p, _ := path.Parse(e.Name)
 	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction for Put: %w", err)
+	}
 
 	if p.IsRoot() {
 		if _, err := tx.Exec(`INSERT INTO root (username) VALUES (?)`, p.User()); err != nil {
@@ -21,37 +24,56 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 		}
 	}
 
-	i, err := s.op(tx, p)
+	oid, err := s.op(tx, p)
 	if err != nil {
-		return fmt.Errorf("append operation to log: %w", err)
+		return fmt.Errorf("persist operation to log: %w", err)
 	}
 
-	if err = execPut(tx, i, e); err != nil {
+	pid, err := execPut(tx, oid, e)
+	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("append put to log: %w", err)
+		return fmt.Errorf("persist put to log: %w", err)
+	}
+
+	for _, b := range e.Blocks {
+		_, err := tx.Exec(
+			`INSERT INTO block VALUES (?, ?, ?, ?, ?, ?)`,
+			pid,
+			b.Location.Endpoint.NetAddr,
+			b.Location.Reference,
+			b.Offset,
+			b.Size,
+			b.Packdata,
+		)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("persist block %v: %w", b.Location, err)
+		}
 	}
 
 	return tx.Commit()
 }
 
-func execPut(tx *sql.Tx, op int64, e *upspin.DirEntry) (err error) {
+func execPut(tx *sql.Tx, op int64, e *upspin.DirEntry) (int64, error) {
+	var r sql.Result
+	var err error
 	switch e.Attr {
 	case upspin.AttrDirectory:
-		_, err = tx.Exec(
+		r, err = tx.Exec(
 			`INSERT INTO log_put (operation, writer, dir) VALUES (?, ?, ?)`,
 			op,
 			e.Writer,
 			true,
 		)
 	case upspin.AttrLink:
-		_, err = tx.Exec(
+		r, err = tx.Exec(
 			`INSERT INTO log_put (operation, writer, link) VALUES (?, ?, ?)`,
 			op,
 			e.Writer,
 			e.Link,
 		)
 	default:
-		_, err = tx.Exec(
+		r, err = tx.Exec(
 			`INSERT INTO log_put (operation, writer, packing, packdata) VALUES (?, ?, ?, ?)`,
 			op,
 			e.Writer,
@@ -60,5 +82,10 @@ func execPut(tx *sql.Tx, op int64, e *upspin.DirEntry) (err error) {
 		)
 	}
 
-	return err
+	i, err := r.LastInsertId()
+	if err != nil {
+		return -1, err
+	}
+
+	return i, err
 }
