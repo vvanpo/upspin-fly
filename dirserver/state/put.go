@@ -24,15 +24,14 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 		}
 	}
 
-	oid, err := s.op(tx, p)
-	if err != nil {
-		return fmt.Errorf("persist operation to log: %w", err)
-	}
-
-	pid, err := execPut(tx, oid, e)
+	pid, err := appendPut(tx, e)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("persist put to log: %w", err)
+	}
+
+	if err := s.appendOp(tx, p, pid); err != nil {
+		return fmt.Errorf("persist operation to log: %w", err)
 	}
 
 	for _, b := range e.Blocks {
@@ -54,28 +53,25 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 	return tx.Commit()
 }
 
-func execPut(tx *sql.Tx, op int64, e *upspin.DirEntry) (int64, error) {
+func appendPut(tx *sql.Tx, e *upspin.DirEntry) (int64, error) {
 	var r sql.Result
 	var err error
 	switch e.Attr {
 	case upspin.AttrDirectory:
 		r, err = tx.Exec(
-			`INSERT INTO log_put (operation, writer, dir) VALUES (?, ?, ?)`,
-			op,
+			`INSERT INTO log_put (writer, dir) VALUES (?, ?)`,
 			e.Writer,
 			true,
 		)
 	case upspin.AttrLink:
 		r, err = tx.Exec(
-			`INSERT INTO log_put (operation, writer, link) VALUES (?, ?, ?)`,
-			op,
+			`INSERT INTO log_put (writer, link) VALUES (?, ?)`,
 			e.Writer,
 			e.Link,
 		)
 	default:
 		r, err = tx.Exec(
-			`INSERT INTO log_put (operation, writer, packing, packdata) VALUES (?, ?, ?, ?)`,
-			op,
+			`INSERT INTO log_put (writer, packing, packdata) VALUES (?, ?, ?)`,
 			e.Writer,
 			e.Packing,
 			e.Packdata,

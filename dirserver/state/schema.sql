@@ -3,16 +3,8 @@ CREATE TABLE root (
 	username TEXT UNIQUE NOT NULL
 );
 
-CREATE TABLE log_operation (
-	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-	timestamp INTEGER DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	root REFERENCES root NOT NULL,
-	-- path under the root directory, without the username or leading /
-	path TEXT NOT NULL
-);
-
 CREATE TABLE log_put (
-	operation REFERENCES log_operation PRIMARY KEY NOT NULL,
+	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	writer TEXT,
 	-- if not null, the below fields are not present
 	link TEXT,
@@ -22,8 +14,14 @@ CREATE TABLE log_put (
 	packdata BLOB
 );
 
-CREATE TABLE log_delete (
-	operation REFERENCES log_operation PRIMARY KEY NOT NULL
+CREATE TABLE log_operation (
+	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	timestamp INTEGER DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	root REFERENCES root NOT NULL,
+	-- path under the root directory, without the username or leading /
+	path TEXT NOT NULL,
+	-- if null, implies this operation is a deletion
+	put REFERENCES log_put
 );
 
 CREATE TABLE block (

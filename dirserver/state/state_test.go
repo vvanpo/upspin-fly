@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
+	"upspin.io/path"
 	"upspin.io/upspin"
 )
 
@@ -57,6 +58,11 @@ func TestPutLookupDelete(t *testing.T) {
 	baz.Blocks[0].Location.Reference = "bazref2"
 	baz.Blocks[0].Size = 40
 	if err := s.Put(ctx, baz); err != nil {
+		t.Error(err)
+	}
+
+	bazp, _ := path.Parse(baz.Name)
+	if err := s.Delete(ctx, bazp); err != nil {
 		t.Error(err)
 	}
 }
