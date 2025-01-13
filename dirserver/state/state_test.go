@@ -10,7 +10,7 @@ import (
 	"upspin.io/upspin"
 )
 
-func TestPutLookupDelete(t *testing.T) {
+func TestPutGetDelete(t *testing.T) {
 	ctx := context.Background()
 	db, _ := sql.Open("sqlite3", "file:/tmp/upspin-fly/test.db?_fk=true")
 	s, _ := New(db)
@@ -18,6 +18,7 @@ func TestPutLookupDelete(t *testing.T) {
 		t.Error(err)
 	}
 
+	/// Puts
 	if err := s.Put(ctx, &upspin.DirEntry{
 		Attr:   upspin.AttrDirectory,
 		Writer: "foo@example.com",
@@ -48,8 +49,9 @@ func TestPutLookupDelete(t *testing.T) {
 				Size:   24,
 			},
 		},
-		Writer: "foo@example.com",
-		Name:   "foo@example.com/bar/baz",
+		Writer:     "foo@example.com",
+		Name:       "foo@example.com/bar/baz",
+		SignedName: "foo@example.com/bar/baz",
 	}
 	if err := s.Put(ctx, baz); err != nil {
 		t.Error(err)
@@ -62,6 +64,24 @@ func TestPutLookupDelete(t *testing.T) {
 	}
 
 	bazp, _ := path.Parse(baz.Name)
+
+	/// Get
+	es, err := s.GetAll(ctx, bazp)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(es) != 3 {
+		t.Errorf("wrong number of entries: %d", len(es))
+	}
+	e := es[len(es)-1]
+	if e.Name != "foo@example.com/bar/baz" {
+		t.Errorf("wrong name for baz: %s", e.Name)
+	}
+	if e.Sequence != 2 {
+		t.Errorf("wrong sequence for baz: %d", e.Sequence)
+	}
+
+	/// Delete
 	if err := s.Delete(ctx, bazp); err != nil {
 		t.Error(err)
 	}
