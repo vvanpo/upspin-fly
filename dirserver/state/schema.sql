@@ -6,9 +6,9 @@ CREATE TABLE root (
 CREATE TABLE log_put (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	writer TEXT NOT NULL,
-	-- if not null, the below fields are not present
+	-- If not null, the below fields are not present
 	link TEXT,
-	-- if true, link and the below fields are not present
+	-- If true, link and the below fields are not present
 	dir BOOLEAN,
 	packing INTEGER,
 	packdata BLOB
@@ -18,9 +18,9 @@ CREATE TABLE log_operation (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	timestamp INTEGER DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	root REFERENCES root NOT NULL,
-	-- path under the root directory, without the username or leading /
+	-- Path under the root directory, without the username or leading /
 	path TEXT NOT NULL,
-	-- if null, implies this operation is a deletion
+	-- If null, implies this operation is a deletion
 	put REFERENCES log_put UNIQUE
 );
 
@@ -32,4 +32,13 @@ CREATE TABLE block (
 	size INTEGER NOT NULL,
 	packdata BLOB,
 	PRIMARY KEY(put, reference)
+);
+
+-- Caches the reference to the latest put operation representing the entry, and
+-- its sequence number as described in https://pkg.go.dev/upspin.io@v0.1.0/upspin#pkg-constants
+CREATE TABLE cache_entry (
+	name TEXT PRIMARY KEY NOT NULL,
+	-- This must reference an op with a non-null `put` column
+	op REFERENCES log_operation UNIQUE NOT NULL,
+	sequence INTEGER NOT NULL
 );

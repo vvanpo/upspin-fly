@@ -30,7 +30,8 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 		return fmt.Errorf("persist put to log: %w", err)
 	}
 
-	if err := s.appendOp(tx, p, pid); err != nil {
+	oid, err := s.appendOp(tx, p, pid)
+	if err != nil {
 		return fmt.Errorf("persist operation to log: %w", err)
 	}
 
@@ -50,6 +51,10 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 		}
 	}
 
+	if err := cachePut(tx, p, oid); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("caching put: %w", err)
+	}
 	return tx.Commit()
 }
 

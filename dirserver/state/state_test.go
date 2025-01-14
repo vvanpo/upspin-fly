@@ -71,14 +71,17 @@ func TestPutGetDelete(t *testing.T) {
 		t.Error(err)
 	}
 	if len(es) != 3 {
-		t.Errorf("wrong number of entries: %d", len(es))
+		t.Fatalf("wrong number of entries: %d", len(es))
 	}
 	e := es[len(es)-1]
 	if e.Name != "foo@example.com/bar/baz" {
 		t.Errorf("wrong name for baz: %s", e.Name)
 	}
-	if e.Sequence != 2 {
+	if e.Sequence != 4 {
 		t.Errorf("wrong sequence for baz: %d", e.Sequence)
+	}
+	if es[0].Sequence != 4 {
+		t.Errorf("wrong sequence for root: %d", es[0].Sequence)
 	}
 
 	/// Delete
