@@ -1,17 +1,58 @@
-package state
+package sqlite
 
 import (
 	"context"
 	"database/sql"
+	_ "embed"
+	"strings"
 
+	_ "github.com/mattn/go-sqlite3"
 	"upspin.io/path"
 )
+
+//go:embed schema.sql
+var schema string
 
 type State struct {
 	db *sql.DB
 }
 
-// Delete appends a delete operation to the log.
+// Open accepts a SQLite database file path and initializes it, creating the
+// schema if not present.
+func Open(p string) (*State, error) {
+	db, err := sql.Open("sqlite3", "file:"+p+"?_fk=true")
+	if err != nil {
+		return nil, err
+	}
+	s := &State{db}
+
+	//TODO only if not present
+	if err := s.create(); err != nil {
+		return nil, err
+	}
+	//TODO prepare statements
+
+	return s, nil
+}
+
+func (s State) create() error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	for _, stmt := range strings.Split(schema, ";\n") {
+		_, err = tx.Exec(stmt)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// Delete implements dirserver.State.
 func (s State) Delete(ctx context.Context, p path.Parsed) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {

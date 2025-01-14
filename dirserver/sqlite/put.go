@@ -1,4 +1,4 @@
-package state
+package sqlite
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"upspin.io/upspin"
 )
 
-// Put persists a put operation.
+// Put implements dirserver.State.
 func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 	p, _ := path.Parse(e.Name)
 	tx, err := s.db.BeginTx(ctx, nil)

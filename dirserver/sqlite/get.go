@@ -1,4 +1,4 @@
-package state
+package sqlite
 
 import (
 	"context"
@@ -9,10 +9,7 @@ import (
 	"upspin.io/upspin"
 )
 
-// GetAll retrieves the entries for all segments in a path. If a link is found
-// in the path and it is the last element returned, regardless of whether this
-// completes the requested path. If an entry does not exist, the segments up to
-// and including its parent are returned.
+// GetAll implements dirserver.State.
 func (s State) GetAll(ctx context.Context, p path.Parsed) ([]*upspin.DirEntry, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {

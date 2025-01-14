@@ -1,22 +1,16 @@
-package state
+package sqlite
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
-	_ "github.com/mattn/go-sqlite3"
 	"upspin.io/path"
 	"upspin.io/upspin"
 )
 
 func TestPutGetDelete(t *testing.T) {
 	ctx := context.Background()
-	db, _ := sql.Open("sqlite3", "file:/tmp/upspin-fly/test.db?_fk=true")
-	s, _ := New(db)
-	if err := s.create(ctx); err != nil {
-		t.Error(err)
-	}
+	s, _ := Open("/tmp/upspin-fly/test.db")
 
 	/// Puts
 	if err := s.Put(ctx, &upspin.DirEntry{

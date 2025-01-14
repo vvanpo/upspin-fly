@@ -1,4 +1,4 @@
-package state
+package sqlite
 
 import (
 	"database/sql"
