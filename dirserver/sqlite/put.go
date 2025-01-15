@@ -82,6 +82,9 @@ func appendPut(tx *sql.Tx, e *upspin.DirEntry) (int64, error) {
 			e.Packdata,
 		)
 	}
+	if err != nil {
+		return -1, err
+	}
 
 	i, err := r.LastInsertId()
 	if err != nil {

@@ -6,17 +6,17 @@ CREATE TABLE root (
 CREATE TABLE log_put (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	writer TEXT NOT NULL,
+	-- If true, the below fields are not present
+	dir BOOLEAN DEFAULT FALSE NOT NULL,
 	-- If not null, the below fields are not present
 	link TEXT,
-	-- If true, link and the below fields are not present
-	dir BOOLEAN,
 	packing INTEGER,
 	packdata BLOB
 );
 
 CREATE TABLE log_operation (
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-	timestamp INTEGER DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	timestamp INTEGER DEFAULT (unixepoch()) NOT NULL,
 	root REFERENCES root NOT NULL,
 	-- Path under the root directory, without the username or leading /
 	path TEXT NOT NULL,

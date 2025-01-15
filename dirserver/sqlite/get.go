@@ -43,7 +43,7 @@ func (s State) GetAll(ctx context.Context, p path.Parsed) ([]*upspin.DirEntry, e
 func get(tx *sql.Tx, p path.Parsed) (*upspin.DirEntry, error) {
 	r := tx.QueryRow(
 		`SELECT
-			e.sequence, o.timestamp, p.writer, p.link, p.dir
+			e.sequence, o.timestamp, p.writer, p.dir, p.link
 		FROM cache_entry e
 		INNER JOIN log_operation o ON e.op = o.id
 		INNER JOIN root r ON o.root = r.id
@@ -64,11 +64,15 @@ func get(tx *sql.Tx, p path.Parsed) (*upspin.DirEntry, error) {
 		SignedName: p.Path(),
 	}
 	var dir bool
-	r.Scan(&e.Sequence, &e.Time, &e.Writer, &e.Link, &dir)
+	var link sql.NullString
+	if err := r.Scan(&e.Sequence, &e.Time, &e.Writer, &dir, &link); err != nil {
+		return nil, err
+	}
 	if dir {
 		e.Attr = upspin.AttrDirectory
-	} else if e.Link != "" {
+	} else if link.Valid {
 		e.Attr = upspin.AttrLink
+		e.Link = upspin.PathName(link.String)
 	}
 
 	//TODO get blocks

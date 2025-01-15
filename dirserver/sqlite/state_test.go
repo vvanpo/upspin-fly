@@ -10,7 +10,10 @@ import (
 
 func TestPutGetDelete(t *testing.T) {
 	ctx := context.Background()
-	s, _ := Open("/tmp/upspin-fly/test.db")
+	s, err := Open("/tmp/upspin-fly/test.db")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
 
 	/// Puts
 	if err := s.Put(ctx, &upspin.DirEntry{
@@ -70,6 +73,9 @@ func TestPutGetDelete(t *testing.T) {
 	e := es[len(es)-1]
 	if e.Name != "foo@example.com/bar/baz" {
 		t.Errorf("wrong name for baz: %s", e.Name)
+	}
+	if es[1].Attr != upspin.AttrDirectory {
+		t.Errorf("bar not a directory: %v", es[1])
 	}
 	if e.Sequence != 4 {
 		t.Errorf("wrong sequence for baz: %d", e.Sequence)

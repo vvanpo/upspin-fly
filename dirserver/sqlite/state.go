@@ -35,6 +35,11 @@ func Open(p string) (*State, error) {
 	return s, nil
 }
 
+// Close closes the database.
+func (s State) Close() error {
+	return s.db.Close()
+}
+
 func (s State) create() error {
 	tx, err := s.db.Begin()
 	if err != nil {
