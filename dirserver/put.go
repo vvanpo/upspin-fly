@@ -4,16 +4,16 @@ import "upspin.io/upspin"
 
 /*
 If the Put entry...
-- parent path contains a link, return ErrFollowLink if the user has any access right for the first link in the path
+- parent contains a link element along its path, return upspin.ErrFollowLink if the user has any access right for the link
 - replaces an existing entry:
-  - the existing entry can't be a directory
-  - the new entry can't be a directory
-  - the user must have the Write permission at the path
-  - the entry sequence number must match the existing entry, or be SeqIgnore
+	- the existing entry can't be a directory
+	- the new entry can't be a directory
+	- the user must have the Write permission at the path
+- the entry sequence number must match the existing entry, or be SeqIgnore
 - is a new entry:
   - the user must have the Create permission at the path
   - the sequence number must be SeqNotExist or SeqIgnore
-- path last element is Access:
+- path final element is Access:
   - must be a regular file
   - must have valid access syntax
 - path is <user>/Group:

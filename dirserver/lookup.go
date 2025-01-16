@@ -16,7 +16,7 @@ func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	if err != nil {
 		return nil, errors.E(op, name, err)
 	}
-	es, err := s.state.GetAll(ctx, p)
+	es, err := s.state.LookupAll(ctx, p)
 	if err != nil {
 		return nil, errors.E(op, name, err)
 	}
@@ -25,7 +25,7 @@ func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 		if e.Attr == upspin.AttrLink {
 			return e, upspin.ErrFollowLink
 		}
-		return nil, errors.E(errors.NotExist)
+		return nil, errors.E(op, name, errors.NotExist)
 	}
 
 	return e, nil

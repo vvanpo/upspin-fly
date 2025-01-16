@@ -7,6 +7,7 @@ import (
 	"upspin.io/path"
 )
 
+// Updates a path in the cache.
 func cachePut(tx *sql.Tx, p path.Parsed, op int64) error {
 	r := tx.QueryRow(
 		`SELECT sequence
@@ -58,4 +59,19 @@ func cachePut(tx *sql.Tx, p path.Parsed, op int64) error {
 	)
 
 	return err
+}
+
+// Deletes a path from the cache.
+func cacheDelete(tx *sql.Tx, p path.Parsed) error {
+	return nil
+}
+
+// Sets the sequence of all elements in the path to an incremented sequence and
+// returns it.
+// e.g. if
+// path:	user@example.com/foo/bar/baz
+// sequences:             34  18   7   6
+// the resulting sequences for all elements will be 35.
+func cacheUpdateSeq(tx *sql.Tx, p path.Parsed) (int64, error) {
+	return -1, nil
 }
