@@ -109,16 +109,16 @@ func TestDelete(t *testing.T) {
 	}
 
 	/// Puts
-	bar := &upspin.DirEntry{
-		Writer: "foo@example.com",
-		Name:   "foo@example.com/bar",
-	}
 	if err := s.Put(ctx, &upspin.DirEntry{
 		Attr:   upspin.AttrDirectory,
 		Writer: "foo@example.com",
 		Name:   "foo@example.com/",
 	}); err != nil {
 		t.Error(err)
+	}
+	bar := &upspin.DirEntry{
+		Writer: "foo@example.com",
+		Name:   "foo@example.com/bar",
 	}
 	if err := s.Put(ctx, bar); err != nil {
 		t.Error(err)
@@ -137,5 +137,8 @@ func TestDelete(t *testing.T) {
 	}
 	if len(es) != 1 {
 		t.Errorf("Entry not deleted: %v", es)
+	}
+	if es[0].Sequence != 3 {
+		t.Errorf("Root sequence not incremented on delete: %d", es[0].Sequence)
 	}
 }

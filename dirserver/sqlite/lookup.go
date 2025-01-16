@@ -48,16 +48,9 @@ func get(tx *sql.Tx, p path.Parsed) (*upspin.DirEntry, error) {
 		INNER JOIN log_operation o ON e.op = o.id
 		INNER JOIN root r ON o.root = r.id
 		INNER JOIN log_put p ON o.put = p.id
-		WHERE e.name = ?
-		`,
+		WHERE e.name = ?`,
 		p.Path(),
 	)
-	if err := r.Err(); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("getting DirEntry: %w", err)
-	}
 
 	e := &upspin.DirEntry{
 		Name:       p.Path(),
@@ -68,7 +61,10 @@ func get(tx *sql.Tx, p path.Parsed) (*upspin.DirEntry, error) {
 	var packing sql.NullByte
 	var packdata []byte
 	if err := r.Scan(&e.Sequence, &e.Time, &e.Writer, &dir, &link, &packing, &packdata); err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("querying DirEntry: %w", err)
 	}
 	if dir {
 		e.Attr = upspin.AttrDirectory
