@@ -63,13 +63,13 @@ func (s State) appendOp(tx *sql.Tx, p path.Parsed, pid int64) (int64, error) {
 	var err error
 	if pid < 0 {
 		r, err = tx.Exec(
-			`INSERT INTO log_operation (root, path) VALUES ((SELECT id FROM root WHERE username = ?), ?)`,
+			`INSERT INTO log_operation (root, path) VALUES ((SELECT id FROM log_root WHERE username = ?), ?)`,
 			p.User(),
 			p.FilePath(),
 		)
 	} else {
 		r, err = tx.Exec(
-			`INSERT INTO log_operation (root, path, put) VALUES ((SELECT id FROM root WHERE username = ?), ?, ?)`,
+			`INSERT INTO log_operation (root, path, put) VALUES ((SELECT id FROM log_root WHERE username = ?), ?, ?)`,
 			p.User(),
 			p.FilePath(),
 			pid,

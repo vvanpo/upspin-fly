@@ -18,7 +18,7 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 	}
 
 	if p.IsRoot() {
-		if _, err := tx.Exec(`INSERT INTO root (username) VALUES (?)`, p.User()); err != nil {
+		if _, err := tx.Exec(`INSERT INTO log_root (username) VALUES (?)`, p.User()); err != nil {
 			tx.Rollback()
 			return fmt.Errorf("create root for %s: %w", p.User(), err)
 		}
@@ -37,7 +37,7 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 
 	for _, b := range e.Blocks {
 		_, err := tx.Exec(
-			`INSERT INTO block VALUES (?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO log_block VALUES (?, ?, ?, ?, ?, ?)`,
 			pid,
 			b.Location.Endpoint.NetAddr,
 			b.Location.Reference,
@@ -51,7 +51,7 @@ func (s State) Put(ctx context.Context, e *upspin.DirEntry) error {
 		}
 	}
 
-	if err := cachePut(tx, p, oid); err != nil {
+	if err := projPut(tx, p, oid); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("caching put: %w", err)
 	}

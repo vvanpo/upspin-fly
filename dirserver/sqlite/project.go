@@ -1,15 +1,18 @@
 package sqlite
 
+// Provides functions to keep the tree projection in-sync with the log.
+
 import (
 	"database/sql"
 	"strings"
 
 	"upspin.io/path"
+	"upspin.io/upspin"
 )
 
 // Updates a path in the cache.
-func cachePut(tx *sql.Tx, p path.Parsed, op int64) error {
-	var seq int64 = 1
+func projPut(tx *sql.Tx, p path.Parsed, op int64) error {
+	var seq int64 = upspin.SeqBase
 
 	if !p.IsRoot() {
 		var err error
@@ -21,7 +24,7 @@ func cachePut(tx *sql.Tx, p path.Parsed, op int64) error {
 
 	// Upsert the final entry
 	_, err := tx.Exec(
-		`INSERT INTO cache_entry
+		`INSERT INTO proj_entry
 		VALUES (?, ?, ?)
 		ON CONFLICT(name) DO UPDATE SET
 			op = excluded.op,
@@ -37,7 +40,7 @@ func cachePut(tx *sql.Tx, p path.Parsed, op int64) error {
 // Deletes a path from the cache.
 func cacheDelete(tx *sql.Tx, p path.Parsed) error {
 	_, err := tx.Exec(
-		`DELETE FROM cache_entry
+		`DELETE FROM proj_entry
 		WHERE name = ?`,
 		p.Path(),
 	)
@@ -52,14 +55,20 @@ func cacheDelete(tx *sql.Tx, p path.Parsed) error {
 // Sets the sequence of all elements in the path to an incremented sequence and
 // returns it. All elements including the root directory must exist in the
 // cache.
-// e.g. if
-// path:	user@example.com/foo/bar/baz
-// sequences:             34  18   7   6
+//
+// For example, if
+//
+//	path =	user@example.com/foo/bar/baz
+//	sequences =           34  18   7   7
+//
 // the resulting sequences for all elements will be 35.
+//
+// See https://pkg.go.dev/upspin.io@v0.1.0/upspin#pkg-constants for a
+// description of sequence numbers.
 func cacheUpdateSeq(tx *sql.Tx, p path.Parsed) (int64, error) {
 	r := tx.QueryRow(
 		`SELECT sequence
-		FROM cache_entry
+		FROM proj_entry
 		WHERE name = ?`,
 		p.First(0).Path(),
 	)
@@ -77,7 +86,7 @@ func cacheUpdateSeq(tx *sql.Tx, p path.Parsed) (int64, error) {
 	params = params[:len(params)-1]
 	bind := append([]any{seq}, els...)
 	_, err := tx.Exec(
-		`UPDATE cache_entry
+		`UPDATE proj_entry
 		SET sequence = ?
 		WHERE name IN (`+params+`)`,
 		bind...,

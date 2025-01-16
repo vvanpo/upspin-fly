@@ -40,13 +40,18 @@ func (s State) LookupAll(ctx context.Context, p path.Parsed) ([]*upspin.DirEntry
 	return es, nil
 }
 
+// Lookup implements dirserver.State.
+func (s State) Lookup(ctx context.Context, p path.Parsed) (*upspin.DirEntry, error) {
+	return nil, nil
+}
+
 func get(tx *sql.Tx, p path.Parsed) (*upspin.DirEntry, error) {
 	r := tx.QueryRow(
 		`SELECT
 			e.sequence, o.timestamp, p.writer, p.dir, p.link, p.packing, p.packdata
-		FROM cache_entry e
+		FROM proj_entry e
 		INNER JOIN log_operation o ON e.op = o.id
-		INNER JOIN root r ON o.root = r.id
+		INNER JOIN log_root r ON o.root = r.id
 		INNER JOIN log_put p ON o.put = p.id
 		WHERE e.name = ?`,
 		p.Path(),
