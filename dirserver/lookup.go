@@ -9,16 +9,16 @@ import (
 )
 
 func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
-	const op errors.Op = "dirserver/Lookup"
+	const op errors.Op = "dirserver.Lookup"
 	ctx := context.TODO()
 
 	p, err := path.Parse(name)
 	if err != nil {
 		return nil, errors.E(op, name, err)
 	}
-	es, err := s.state.LookupAll(ctx, p)
+	es, err := s.State.LookupAll(ctx, p)
 	if err != nil {
-		return nil, errors.E(op, name, err)
+		return nil, s.internalErr(ctx, "LookupAll", op, name, err)
 	}
 	e := es[len(es)-1]
 	if len(es) <= p.NElem() {
