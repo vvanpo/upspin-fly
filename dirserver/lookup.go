@@ -18,7 +18,7 @@ func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	}
 	es, err := s.State.LookupAll(ctx, p)
 	if err != nil {
-		return nil, s.internalErr(ctx, "LookupAll", op, name, err)
+		return nil, s.internalErr(ctx, op, name, err)
 	}
 	e := es[len(es)-1]
 	if len(es) <= p.NElem() {

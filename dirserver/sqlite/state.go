@@ -19,6 +19,8 @@ type State struct {
 // Open accepts a SQLite database file path and initializes it, creating the
 // schema if not present.
 func Open(p string) (*State, error) {
+	// TODO Learn how best to deal with the mattn driver by reviewing the
+	// advice in https://www.reddit.com/r/golang/comments/1exk981/comment/lj7d3u6/
 	db, err := sql.Open("sqlite3", "file:"+p+"?_fk=true")
 	if err != nil {
 		return nil, err
