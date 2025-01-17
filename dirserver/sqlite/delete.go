@@ -19,7 +19,7 @@ func (s State) Delete(ctx context.Context, p path.Parsed) error {
 		return fmt.Errorf("persist delete to log: %w", err)
 	}
 
-	if err := cacheDelete(tx, p); err != nil {
+	if err := projDelete(tx, p); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("delete cache entry: %w", err)
 	}

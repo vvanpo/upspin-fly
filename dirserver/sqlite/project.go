@@ -1,6 +1,8 @@
 package sqlite
 
 // Provides functions to keep the tree projection in-sync with the log.
+// The projection functions as a cache of the current entry and sequence to
+// prevent recomputing these from the log on every request.
 
 import (
 	"database/sql"
@@ -10,13 +12,13 @@ import (
 	"upspin.io/upspin"
 )
 
-// Updates a path in the cache.
+// Updates a path in the projection.
 func projPut(tx *sql.Tx, p path.Parsed, op int64) error {
 	var seq int64 = upspin.SeqBase
 
 	if !p.IsRoot() {
 		var err error
-		seq, err = cacheUpdateSeq(tx, p.Drop(1))
+		seq, err = projUpdateSeq(tx, p.Drop(1))
 		if err != nil {
 			return err
 		}
@@ -37,8 +39,8 @@ func projPut(tx *sql.Tx, p path.Parsed, op int64) error {
 	return err
 }
 
-// Deletes a path from the cache.
-func cacheDelete(tx *sql.Tx, p path.Parsed) error {
+// Deletes a path from the projection.
+func projDelete(tx *sql.Tx, p path.Parsed) error {
 	_, err := tx.Exec(
 		`DELETE FROM proj_entry
 		WHERE name = ?`,
@@ -48,13 +50,13 @@ func cacheDelete(tx *sql.Tx, p path.Parsed) error {
 		return err
 	}
 
-	_, err = cacheUpdateSeq(tx, p.Drop(1))
+	_, err = projUpdateSeq(tx, p.Drop(1))
 	return err
 }
 
 // Sets the sequence of all elements in the path to an incremented sequence and
 // returns it. All elements including the root directory must exist in the
-// cache.
+// projection.
 //
 // For example, if
 //
@@ -65,7 +67,7 @@ func cacheDelete(tx *sql.Tx, p path.Parsed) error {
 //
 // See https://pkg.go.dev/upspin.io@v0.1.0/upspin#pkg-constants for a
 // description of sequence numbers.
-func cacheUpdateSeq(tx *sql.Tx, p path.Parsed) (int64, error) {
+func projUpdateSeq(tx *sql.Tx, p path.Parsed) (int64, error) {
 	r := tx.QueryRow(
 		`SELECT sequence
 		FROM proj_entry
