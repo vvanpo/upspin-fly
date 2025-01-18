@@ -17,7 +17,9 @@ If the WhichAccess path...
 	- if the user has no read rights, return the entry without blocks or packdata
   - if no Access file is found and the user is the owner of the tree, return nil, else errors.Private
 
-TODO: snapshot users; always return nil
+TODO snapshot users; always return nil
+TODO if a request with a non-existent path contains an ancestor element that is a file instead of a directory, what should be returned?
+	- the reference implementation just pretends it's a folder; e.g. WhichAccess("user@example.com/Access/Access") (which is never a possible path) will return "user@example.com/Access" if it exists.
 */
 
 // WhichAccess implements upspin.DirServer.
@@ -41,7 +43,7 @@ func (s *server) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 		return nil, s.internalErr(ctx, op, name, err)
 	}
 
-	if e.Attr == upspin.AttrLink {
+	if e.IsLink() {
 		return s.followLink(e)
 	}
 	if acc == nil {
@@ -53,8 +55,8 @@ func (s *server) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 	return acc, nil
 }
 
-// Returns the access file controlling access to the path represented by the
-// entry list. Does not follow links.
+// Returns the access file controlling access to the path of the entry. Does
+// not follow links.
 func (s *server) accessFor(ctx context.Context, e *upspin.DirEntry) (*upspin.DirEntry, error) {
 	p, _ := path.Parse(e.Name)
 	if e.Attr != upspin.AttrDirectory {
@@ -62,19 +64,18 @@ func (s *server) accessFor(ctx context.Context, e *upspin.DirEntry) (*upspin.Dir
 	}
 
 	var ae *upspin.DirEntry
+	var err error
 	for i := p.NElem(); i >= 0; i++ {
-		ap := p.Path() + "/" + access.AccessFile
-		ae, err := s.State.Lookup(ctx, ap)
-		if err != nil {
-			return nil, err
+		dir := p.Path()
+		if !p.IsRoot() {
+			dir += "/"
 		}
-		if ae != nil {
+
+		ae, err = s.State.Lookup(ctx, dir+access.AccessFile)
+		if err != nil || ae != nil {
 			break
 		}
 
-		if p.IsRoot() {
-			break
-		}
 		p = p.Drop(1)
 	}
 

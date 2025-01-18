@@ -22,7 +22,7 @@ func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	}
 	e := es[len(es)-1]
 	if len(es) <= p.NElem() {
-		if e.Attr == upspin.AttrLink {
+		if e.IsLink() {
 			return e, upspin.ErrFollowLink
 		}
 		return nil, errors.E(op, name, errors.NotExist)
