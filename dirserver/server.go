@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"upspin.io/access"
 	"upspin.io/errors"
 	"upspin.io/path"
 	"upspin.io/upspin"
@@ -24,7 +25,8 @@ type State interface {
 	LookupAll(context.Context, path.Parsed) ([]*upspin.DirEntry, error)
 
 	// Lookup retrieves the entry at the requested path, if it exists. It does
-	// not attempt to evaluate links along the path. The path should be clean.
+	// not attempt to evaluate links along the path. The path should be clean
+	// or the lookup will return nil.
 	Lookup(context.Context, upspin.PathName) (*upspin.DirEntry, error)
 
 	// GetBlocks returns the blocks for an entry at the given path. Performs no
@@ -42,13 +44,27 @@ type State interface {
 }
 
 // Cache provides an interface for transparent caching of all data depended on
-// by the directory server that it does not manage, i.e. access and group file
+// by the directory server that is stored elsewhere, i.e. access and group file
 // contents.
 type Cache interface {
+
+	// GetAccess retrieves and caches a parsed access file.
+	GetAccess(context.Context, *upspin.DirEntry) (*access.Access, error)
+
+	// GetGroup retrieves a local or remote group file. Must be passed to every
+	// invocation of access.Can().
+	//
+	// Currently this method does not live up to the interface's promise;
+	// upspin.io/access uses its own global group cache, which this and
+	// RemoveGroup will have to be implemented to manipulate.
+	GetGroup(context.Context, upspin.PathName) ([]byte, error)
+
+	RemoveGroup(context.Context, upspin.PathName) error
 }
 
 type server struct {
 	State
+	Cache
 	*slog.Logger
 }
 
