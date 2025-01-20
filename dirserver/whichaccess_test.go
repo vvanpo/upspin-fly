@@ -9,15 +9,18 @@ import (
 	"upspin.io/upspin"
 )
 
-type nilCache struct{}
+type cache struct {
+	access map[upspin.PathName]string
+}
 
-func (_ nilCache) GetAccess(ctx context.Context, e *upspin.DirEntry) (*access.Access, error) {
+func (c *cache) GetAccess(ctx context.Context, e *upspin.DirEntry) (*access.Access, error) {
+	as := c.access[e.Name]
+	return access.Parse(e.Name, []byte(as))
+}
+func (_ *cache) GetGroup(ctx context.Context, n upspin.PathName) ([]byte, error) {
 	return nil, nil
 }
-func (_ nilCache) GetGroup(ctx context.Context, n upspin.PathName) ([]byte, error) {
-	return nil, nil
-}
-func (_ nilCache) RemoveGroup(ctx context.Context, n upspin.PathName) error {
+func (_ *cache) RemoveGroup(ctx context.Context, n upspin.PathName) error {
 	return nil
 }
 
@@ -41,8 +44,10 @@ func TestWhichAccess(t *testing.T) {
 		Name:    "foo@example.com/bar",
 	})
 
-	s := &server{state: st, cache: nilCache{}}
-	d := &dialed{s, "user@example.com"}
+	c := &cache{make(map[upspin.PathName]string)}
+	c.access["foo@example.com/Access"] = ""
+	s := &server{state: st, cache: c}
+	d := &dialed{s, "foo@example.com"}
 
 	assertAcc := func(expect upspin.PathName, e *upspin.DirEntry, err error) {
 		if err != nil {
