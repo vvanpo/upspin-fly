@@ -2,6 +2,7 @@ package dirserver
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/vvanpo/upspin-fly/dirserver/sqlite"
@@ -23,8 +24,10 @@ func TestLookup(t *testing.T) {
 		Name:    "foo@example.com/bar",
 	})
 
-	s := server{state: st}
-	e, err := s.Lookup("foo@example.com/bar")
+	s := &server{state: st}
+	d := &dialed{s, slog.Default(), "foo@example.com"}
+
+	e, err := d.Lookup("foo@example.com/bar")
 	if err != nil {
 		t.Error(err)
 	} else if e.Name != "foo@example.com/bar" {
@@ -48,8 +51,9 @@ func TestErrFollowLink(t *testing.T) {
 		Name:   "foo@example.com/bar",
 	})
 
-	s := server{state: st}
-	e, err := s.Lookup("foo@example.com/bar/baz")
+	s := &server{state: st}
+	d := &dialed{s, slog.Default(), "foo@example.com"}
+	e, err := d.Lookup("foo@example.com/bar/baz")
 	if err == nil {
 		t.Errorf("ErrFollowLink not returned: %v", e)
 	}

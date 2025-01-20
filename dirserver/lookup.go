@@ -1,25 +1,22 @@
 package dirserver
 
 import (
-	"context"
-
 	"upspin.io/errors"
 	"upspin.io/path"
 	"upspin.io/upspin"
 )
 
 // Lookup implements upspin.DirServer.
-func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
-	const op errors.Op = "dirserver.Lookup"
-	ctx := context.TODO()
+func (d *dialed) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
+	ctx, op := d.setCtx("Lookup", name)
 
 	p, err := path.Parse(name)
 	if err != nil {
 		return nil, errors.E(op, name, err)
 	}
-	es, err := s.state.LookupAll(ctx, p)
+	es, err := d.state.LookupAll(ctx, p)
 	if err != nil {
-		return nil, s.internalErr(ctx, op, name, err)
+		return nil, d.internalErr(ctx, op, name, err)
 	}
 	e := es[len(es)-1]
 	if len(es) <= p.NElem() {

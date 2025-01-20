@@ -25,8 +25,7 @@ TODO if a request with a non-existent path contains an ancestor element that is 
 
 // WhichAccess implements upspin.DirServer.
 func (d *dialed) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
-	const op errors.Op = "dir.WhichAccess" // TODO put op, requester, path, etc. in request context
-	ctx := context.TODO()
+	ctx, op := d.setCtx("WhichAccess", name)
 
 	p, err := path.Parse(name)
 	if err != nil {
@@ -54,7 +53,7 @@ func (d *dialed) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 			// fall back on the default owner-only rights.
 			d.log.ErrorContext(
 				ctx,
-				"Access file cannot be retrieved or parsed",
+				"access file cannot be retrieved or parsed",
 				slog.String("op", string(op)),
 				slog.String("name", string(name)),
 				slog.Any("err", err),

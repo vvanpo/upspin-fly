@@ -2,6 +2,7 @@ package dirserver
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/vvanpo/upspin-fly/dirserver/sqlite"
@@ -47,7 +48,7 @@ func TestWhichAccess(t *testing.T) {
 	c := &cache{make(map[upspin.PathName]string)}
 	c.access["foo@example.com/Access"] = ""
 	s := &server{state: st, cache: c}
-	d := &dialed{s, "foo@example.com"}
+	d := &dialed{s, slog.Default(), "foo@example.com"}
 
 	assertAcc := func(expect upspin.PathName, e *upspin.DirEntry, err error) {
 		if err != nil {

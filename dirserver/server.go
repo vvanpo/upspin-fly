@@ -76,18 +76,26 @@ type server struct {
 // Implements an upspin.DirServer serving a user that must be authenticated.
 type dialed struct {
 	*server
-
+	log       *slog.Logger
 	requester upspin.UserName
 }
 
+func (d *dialed) setCtx(op string, name upspin.PathName) (context.Context, errors.Op) {
+	op = "dir." + op
+	d.log = d.log.With(
+		"operation", op,
+		"pathname", name,
+	)
+
+	return context.TODO(), errors.Op(op)
+}
+
 // Logs and formats an internal error to pass to the user, eliding details.
-func (s *server) internalErr(ctx context.Context, op errors.Op, name upspin.PathName, err error) error {
-	s.log.ErrorContext(
+func (d *dialed) internalErr(ctx context.Context, op errors.Op, name upspin.PathName, err error) error {
+	d.log.ErrorContext(
 		ctx,
-		"Internal error returned to user",
-		slog.String("op", string(op)),
-		slog.String("name", string(name)),
-		slog.Any("err", err),
+		"internal error returned to user",
+		"err", err,
 	)
 
 	return errors.E(op, name, errors.Internal, "reference: TODO") // Figure out tracing/correlation ids

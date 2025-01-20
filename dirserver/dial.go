@@ -1,12 +1,16 @@
 package dirserver
 
-import "upspin.io/upspin"
+import (
+	"upspin.io/upspin"
+)
 
 // Dial implements upspin.Dialer.
 func (s *server) Dial(rc upspin.Config, e upspin.Endpoint) (upspin.Service, error) {
+	requester := rc.UserName()
 	d := &dialed{
 		server:    s,
-		requester: rc.UserName(),
+		log:       s.log.With("requester", requester),
+		requester: requester,
 	}
 
 	return d, nil
@@ -19,4 +23,5 @@ func (d *dialed) Endpoint() upspin.Endpoint {
 
 // Close implements upspin.Service.
 func (d *dialed) Close() {
+	d.log.Info("closed")
 }
