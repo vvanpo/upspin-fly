@@ -27,6 +27,7 @@ If the Put entry...
   - must use signed-but-unencrypted packing
 */
 
+// Put implements upspin.DirServer.
 func (s *server) Put(entry *upspin.DirEntry) (*upspin.DirEntry, error) {
 
 	return &upspin.DirEntry{

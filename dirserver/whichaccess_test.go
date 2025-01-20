@@ -5,8 +5,21 @@ import (
 	"testing"
 
 	"github.com/vvanpo/upspin-fly/dirserver/sqlite"
+	"upspin.io/access"
 	"upspin.io/upspin"
 )
+
+type nilCache struct{}
+
+func (_ nilCache) GetAccess(ctx context.Context, e *upspin.DirEntry) (*access.Access, error) {
+	return nil, nil
+}
+func (_ nilCache) GetGroup(ctx context.Context, n upspin.PathName) ([]byte, error) {
+	return nil, nil
+}
+func (_ nilCache) RemoveGroup(ctx context.Context, n upspin.PathName) error {
+	return nil
+}
 
 func TestWhichAccess(t *testing.T) {
 	st, _ := sqlite.Open(":memory:")
@@ -28,7 +41,8 @@ func TestWhichAccess(t *testing.T) {
 		Name:    "foo@example.com/bar",
 	})
 
-	s := server{State: st}
+	s := &server{state: st, cache: nilCache{}}
+	d := &dialed{s, "user@example.com"}
 
 	assertAcc := func(expect upspin.PathName, e *upspin.DirEntry, err error) {
 		if err != nil {
@@ -41,15 +55,15 @@ func TestWhichAccess(t *testing.T) {
 	}
 
 	// A regular file should return an adjacent access file
-	e, err := s.WhichAccess("foo@example.com/bar")
+	e, err := d.WhichAccess("foo@example.com/bar")
 	assertAcc("foo@example.com/Access", e, err)
 
 	// A directory should return the access file it contains
-	e, err = s.WhichAccess("foo@example.com/")
+	e, err = d.WhichAccess("foo@example.com/")
 	assertAcc("foo@example.com/Access", e, err)
 
 	// A non-existent path should return the nearest access file along the path
-	e, err = s.WhichAccess("foo@example.com/baz/qux/quux")
+	e, err = d.WhichAccess("foo@example.com/baz/qux/quux")
 	assertAcc("foo@example.com/Access", e, err)
 
 	// A link should return ErrFollowLink

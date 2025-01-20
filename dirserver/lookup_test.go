@@ -23,7 +23,7 @@ func TestLookup(t *testing.T) {
 		Name:    "foo@example.com/bar",
 	})
 
-	s := server{State: st}
+	s := server{state: st}
 	e, err := s.Lookup("foo@example.com/bar")
 	if err != nil {
 		t.Error(err)
@@ -48,7 +48,7 @@ func TestErrFollowLink(t *testing.T) {
 		Name:   "foo@example.com/bar",
 	})
 
-	s := server{State: st}
+	s := server{state: st}
 	e, err := s.Lookup("foo@example.com/bar/baz")
 	if err == nil {
 		t.Errorf("ErrFollowLink not returned: %v", e)

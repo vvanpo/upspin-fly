@@ -62,15 +62,27 @@ type Cache interface {
 	RemoveGroup(context.Context, upspin.PathName) error
 }
 
+// Implements an upspin.Dialer that returns an upspin.DirServer.
 type server struct {
-	State
-	Cache
-	*slog.Logger
+	state State
+	cache Cache
+	log   *slog.Logger
+
+	// The upspin user the server is running as; used to retrieve access and
+	// group file contents.
+	cfg upspin.Config
+}
+
+// Implements an upspin.DirServer serving a user that must be authenticated.
+type dialed struct {
+	*server
+
+	requester upspin.UserName
 }
 
 // Logs and formats an internal error to pass to the user, eliding details.
 func (s *server) internalErr(ctx context.Context, op errors.Op, name upspin.PathName, err error) error {
-	s.Logger.ErrorContext(
+	s.log.ErrorContext(
 		ctx,
 		"Internal error returned to user",
 		slog.String("op", string(op)),

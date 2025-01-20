@@ -8,6 +8,7 @@ import (
 	"upspin.io/upspin"
 )
 
+// Lookup implements upspin.DirServer.
 func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	const op errors.Op = "dirserver.Lookup"
 	ctx := context.TODO()
@@ -16,7 +17,7 @@ func (s *server) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
 	if err != nil {
 		return nil, errors.E(op, name, err)
 	}
-	es, err := s.State.LookupAll(ctx, p)
+	es, err := s.state.LookupAll(ctx, p)
 	if err != nil {
 		return nil, s.internalErr(ctx, op, name, err)
 	}

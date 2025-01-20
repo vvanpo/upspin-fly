@@ -24,7 +24,7 @@ TODO if a request with a non-existent path contains an ancestor element that is 
 */
 
 // WhichAccess implements upspin.DirServer.
-func (s *server) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
+func (d *dialed) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 	const op errors.Op = "dir.WhichAccess" // TODO put op, requester, path, etc. in request context
 	ctx := context.TODO()
 
@@ -33,26 +33,26 @@ func (s *server) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 		return nil, errors.E(op, name, err)
 	}
 
-	es, err := s.State.LookupAll(ctx, p)
+	es, err := d.state.LookupAll(ctx, p)
 	if err != nil {
-		return nil, s.internalErr(ctx, op, name, err)
+		return nil, d.internalErr(ctx, op, name, err)
 	}
 
 	e := es[len(es)-1]
-	ae, err := s.accessFor(ctx, e)
+	ae, err := d.accessFor(ctx, e)
 	if err != nil {
-		return nil, s.internalErr(ctx, op, name, err)
+		return nil, d.internalErr(ctx, op, name, err)
 	}
 
 	var a *access.Access
 	if ae != nil {
-		a, err = s.Cache.GetAccess(ctx, ae)
+		a, err = d.cache.GetAccess(ctx, ae)
 		if err != nil {
 			// If the access file is malformed or the store server serving it
 			// is down or can't be reached, we don't want the directory server
 			// to be unusable, so we pretend the access file isn't there and
 			// fall back on the default owner-only rights.
-			s.Logger.ErrorContext(
+			d.log.ErrorContext(
 				ctx,
 				"Access file cannot be retrieved or parsed",
 				slog.String("op", string(op)),
@@ -68,10 +68,10 @@ func (s *server) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 	}
 
 	getGroup := func(n upspin.PathName) ([]byte, error) {
-		return s.Cache.GetGroup(ctx, n)
+		return d.cache.GetGroup(ctx, n)
 	}
-	if granted, err := a.Can(requester, access.AnyRight, p.Path(), getGroup); err != nil {
-		s.Logger.ErrorContext(
+	if granted, err := a.Can(d.requester, access.AnyRight, p.Path(), getGroup); err != nil {
+		d.log.ErrorContext(
 			ctx,
 			"access check failed",
 			slog.String("right", access.AnyRight.String()),
@@ -91,8 +91,8 @@ func (s *server) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 		return nil, nil
 	}
 
-	if canRead, err := a.Can(requester, access.Read, ae.Name, getGroup); err != nil {
-		s.Logger.ErrorContext(
+	if canRead, err := a.Can(d.requester, access.Read, ae.Name, getGroup); err != nil {
+		d.log.ErrorContext(
 			ctx,
 			"access check failed",
 			slog.String("right", access.Read.String()),
@@ -123,7 +123,7 @@ func (s *server) accessFor(ctx context.Context, e *upspin.DirEntry) (*upspin.Dir
 			dir += "/"
 		}
 
-		ae, err = s.State.Lookup(ctx, dir+access.AccessFile)
+		ae, err = s.state.Lookup(ctx, dir+access.AccessFile)
 		if err != nil || ae != nil {
 			break
 		}
