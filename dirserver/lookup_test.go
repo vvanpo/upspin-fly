@@ -24,7 +24,7 @@ func TestLookup(t *testing.T) {
 		Name:    "foo@example.com/bar",
 	})
 
-	s := &server{state: st}
+	s := &server{state: st, cache: &cache{}}
 	d := &dialed{s, slog.Default(), "foo@example.com"}
 
 	e, err := d.Lookup("foo@example.com/bar")
@@ -51,8 +51,9 @@ func TestErrFollowLink(t *testing.T) {
 		Name:   "foo@example.com/bar",
 	})
 
-	s := &server{state: st}
+	s := &server{state: st, cache: &cache{}}
 	d := &dialed{s, slog.Default(), "foo@example.com"}
+
 	e, err := d.Lookup("foo@example.com/bar/baz")
 	if err == nil {
 		t.Errorf("ErrFollowLink not returned: %v", e)

@@ -25,59 +25,13 @@ TODO if a request with a non-existent path contains an ancestor element that is 
 func (d *dialed) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 	ctx, op := d.setCtx("WhichAccess", name)
 
-	p, err := path.Parse(name)
-	if err != nil {
+	_, e, _, ae, err := d.lookup(ctx, name)
+	if err == upspin.ErrFollowLink {
+		return e, err
+	} else if errors.Is(errors.Invalid, err) || errors.Is(errors.Private, err) {
 		return nil, errors.E(op, name, err)
-	}
-
-	es, err := d.state.LookupAll(ctx, p)
-	if err != nil {
+	} else if err != nil {
 		return nil, d.internalErr(ctx, op, name, err)
-	}
-
-	e := es[len(es)-1]
-	ae, err := d.accessFor(ctx, p, e.Attr == upspin.AttrDirectory)
-	if err != nil {
-		return nil, d.internalErr(ctx, op, name, err)
-	}
-
-	var a *access.Access
-	if ae != nil {
-		a, err = d.cache.GetAccess(ctx, ae)
-		if err != nil {
-			// If the access file is malformed or the store server serving it
-			// is down or can't be reached, we don't want the directory server
-			// to be unusable, so we pretend the access file isn't there and
-			// fall back on the default owner-only rights.
-			d.log.ErrorContext(
-				ctx,
-				"access file cannot be retrieved or parsed",
-				"err", err,
-			)
-		}
-	}
-
-	if a == nil {
-		// TODO remove and update access.Can() to allow nil receiver as a shortcut for an owner check
-		a, _ = access.New(p.First(0).Path())
-	}
-
-	getGroup := func(n upspin.PathName) ([]byte, error) {
-		return d.cache.GetGroup(ctx, n)
-	}
-	if granted, err := a.Can(d.requester, access.AnyRight, p.Path(), getGroup); err != nil {
-		d.log.ErrorContext(
-			ctx,
-			"access check failed",
-			"right", access.AnyRight.String(),
-			"err", err,
-		)
-	} else if !granted {
-		return nil, errors.E(op, name, errors.Private)
-	}
-
-	if e.IsLink() {
-		return e, upspin.ErrFollowLink
 	}
 
 	return ae, nil
@@ -92,9 +46,9 @@ func (s *server) accessFor(ctx context.Context, p path.Parsed, isDir bool) (*ups
 
 	var ae *upspin.DirEntry
 	var err error
-	for i := p.NElem(); i >= 0; i++ {
+	for i := p.NElem(); i >= 0; i-- {
 		dir := p.Path()
-		if !p.IsRoot() {
+		if i != 0 {
 			dir += "/"
 		}
 
@@ -106,5 +60,5 @@ func (s *server) accessFor(ctx context.Context, p path.Parsed, isDir bool) (*ups
 		p = p.Drop(1)
 	}
 
-	return ae, nil
+	return ae, err
 }
