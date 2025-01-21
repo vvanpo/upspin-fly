@@ -25,13 +25,13 @@ TODO if a request with a non-existent path contains an ancestor element that is 
 func (d *dialed) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
 	ctx, op := d.setCtx("WhichAccess", name)
 
-	_, e, _, ae, err := d.lookup(ctx, name)
+	p, e, _, ae, err := d.lookup(ctx, name)
 	if err == upspin.ErrFollowLink {
 		return e, err
 	} else if errors.Is(errors.Invalid, err) || errors.Is(errors.Private, err) {
-		return nil, errors.E(op, name, err)
+		return nil, errors.E(op, p.Path(), err)
 	} else if err != nil {
-		return nil, d.internalErr(ctx, op, name, err)
+		return nil, d.internalErr(ctx, op, p.Path(), err)
 	}
 
 	return ae, nil
@@ -61,4 +61,41 @@ func (s *server) accessFor(ctx context.Context, p path.Parsed, isDir bool) (*ups
 	}
 
 	return ae, err
+}
+
+// can is a wrapper for access.Can(), with the addition that it interprets a
+// nil access file argument as indicating default owner-only access.
+// Returned errors are either internal or Group file parsing errors, but
+// access.Can() makes it difficult to discern.
+func (d *dialed) can(ctx context.Context, a *access.Access, right access.Right, p path.Parsed) (bool, error) {
+	if a == nil {
+		// TODO remove and update access.Can() to allow nil receiver as a
+		// shortcut for an owner check
+		a, _ = access.New(p.First(0).Path())
+	}
+
+	getGroup := func(n upspin.PathName) ([]byte, error) {
+		g, err := d.cache.GetGroup(ctx, n)
+		if err != nil {
+			d.log.WarnContext(
+				ctx,
+				"failed to load group from cache",
+				"group", n,
+			)
+		}
+		return g, err
+	}
+	granted, err := a.Can(d.requester, right, p.Path(), getGroup)
+	if err != nil {
+		// TODO if https://github.com/upspin/upspin/issues/489 is fixed this
+		// will begin double-logging the warning from `getGroup()` above
+		d.log.WarnContext(
+			ctx,
+			"access check failed",
+			"right", access.AnyRight.String(),
+			"err", err,
+		)
+	}
+
+	return granted, err
 }
