@@ -27,8 +27,12 @@ TODO snapshot access control
 
 // Lookup implements upspin.DirServer.
 func (d *dialed) Lookup(name upspin.PathName) (*upspin.DirEntry, error) {
-	ctx, op := d.setCtx("Lookup", name)
+	ctx, op := d.setCtx("Lookup")
+	d.log = d.log.With("pathname", name)
+	return d.lookupContext(ctx, op, name)
+}
 
+func (d *dialed) lookupContext(ctx context.Context, op errors.Op, name upspin.PathName) (*upspin.DirEntry, error) {
 	p, e, a, _, err := d.lookup(ctx, name)
 	if err == upspin.ErrFollowLink {
 		return e, err

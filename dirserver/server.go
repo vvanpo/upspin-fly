@@ -80,12 +80,9 @@ type dialed struct {
 	requester upspin.UserName
 }
 
-func (d *dialed) setCtx(op string, name upspin.PathName) (context.Context, errors.Op) {
+func (d *dialed) setCtx(op string) (context.Context, errors.Op) {
 	op = "dir." + op
-	d.log = d.log.With(
-		"operation", op,
-		"pathname", name,
-	)
+	d.log = d.log.With("operation", op)
 
 	return context.TODO(), errors.Op(op)
 }

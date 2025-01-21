@@ -23,7 +23,8 @@ TODO if a request with a non-existent path contains an ancestor element that is 
 
 // WhichAccess implements upspin.DirServer.
 func (d *dialed) WhichAccess(name upspin.PathName) (*upspin.DirEntry, error) {
-	ctx, op := d.setCtx("WhichAccess", name)
+	ctx, op := d.setCtx("WhichAccess")
+	d.log = d.log.With("pathname", name)
 
 	p, e, _, ae, err := d.lookup(ctx, name)
 	if err == upspin.ErrFollowLink {
