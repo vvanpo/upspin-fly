@@ -94,6 +94,8 @@ func (d *dialed) lookup(ctx context.Context, name upspin.PathName) (
 	if ae != nil {
 		a, err = d.cache.GetAccess(ctx, ae)
 		if err != nil {
+			// TODO distinguish between error in access file fetching (warning)
+			// and parsing (error)
 			d.log.ErrorContext(
 				ctx,
 				"access file retrieval failed",
