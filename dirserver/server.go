@@ -29,6 +29,12 @@ type State interface {
 	// or the lookup will return nil.
 	Lookup(context.Context, upspin.PathName) (*upspin.DirEntry, error)
 
+	// List retrieves all entries contained in the directory at the requested
+	// path. It does not attempt to evaluate links along the path. The path
+	// should be clean and a represent a directory, or the lookup will return
+	// no entries.
+	List(context.Context, upspin.PathName) ([]*upspin.DirEntry, error)
+
 	// GetBlocks returns the blocks for an entry at the given path. Performs no
 	// validation; the entry must exist and be a regular file.
 

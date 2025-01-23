@@ -57,3 +57,37 @@ func TestGlob(t *testing.T) {
 		t.Errorf("second DirEntry has wrong name: %s", es[1].Name)
 	}
 }
+
+// If
+// - the pattern is a path without metacharacters, and
+// - the requester has list and read rights, and
+// - the path resolves to a regular file, then
+// - return the complete file entry
+
+// If
+// - the pattern is a path without metacharacters, and
+// - the requester has list but no read rights, and
+// - the path resolves to a regular file, then
+// - return the file entry marked as incomplete
+
+// If
+// - the pattern is a path without metacharacters, and
+// - the requester has read but no list rights, and
+// - the path resolves to a regular file, then
+// - return the complete file entry
+
+// If
+// - the pattern is a path without metacharacters, and
+// - the requester has no rights, then
+// - return access.Private error
+
+// If
+// - the pattern is a path without metacharacters, and
+// - the requester has a non-read/list right (like create), and
+// - the path resolves to a link entry, then
+// - return the link entry without error
+
+// If
+// - the pattern a metacharacter as the last element, and
+// - the pattern without the last element resolves to a regular file, then
+// - return no entries and no error

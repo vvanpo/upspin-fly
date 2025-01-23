@@ -45,7 +45,7 @@ func (d *dialed) lookupContext(ctx context.Context, op errors.Op, name upspin.Pa
 	canRead, err := d.can(ctx, a, access.Read, p)
 	if err != nil {
 		return nil, d.internalErr(ctx, op, p.Path(), err)
-	} else if !canRead && !access.IsAccessControlFile(e.SignedName) {
+	} else if !canRead && !access.IsAccessControlFile(e.Name) {
 		e.MarkIncomplete()
 	} else {
 		// TODO populate blocks+packdata
