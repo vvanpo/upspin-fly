@@ -1,3 +1,7 @@
+// Implements a upspin.DirServer.
+// The server behaviour differs from the reference implementation in that
+// DirEntry's for directories do not contain blocks or packing, and are never
+// marked incomplete.
 package dirserver
 
 import (
@@ -16,23 +20,30 @@ import (
 // Returned errors should generally be regarded as internal faults.
 type State interface {
 
+	// TODO LookupAll -> LookupElem and return only a slice of found path
+	// elements + the final element's attributes and an opaque id for the
+	// immutable record. Lookup should be split to LookupPath and LookupIds.
+	// List should only take an id.
+
 	// LookupAll retrieves the entries for all elements in a path. If a link is
 	// found in the path it is the last element returned, regardless of whether
 	// this completes the requested path. If an entry does not exist, the
 	// elements up to and including its nearest existing parent are returned.
-	// If a regular file entry is returned, it is marked incomplete and
-	// contains no blocks.
+	// If a regular file entry is returned, it contains packdata without
+	// blocks, but is not marked incomplete.
 	LookupAll(context.Context, path.Parsed) ([]*upspin.DirEntry, error)
 
 	// Lookup retrieves the entry at the requested path, if it exists. It does
 	// not attempt to evaluate links along the path. The path should be clean
-	// or the lookup will return nil.
+	// or the lookup will return nil. If the entry is a file it is returned
+	// complete.
 	Lookup(context.Context, upspin.PathName) (*upspin.DirEntry, error)
 
 	// List retrieves all entries contained in the directory at the requested
 	// path. It does not attempt to evaluate links along the path. The path
 	// should be clean and a represent a directory, or the lookup will return
-	// no entries.
+	// no entries. File entries are returned with packdata but no blocks, yet
+	// are not marked incomplete.
 	List(context.Context, upspin.PathName) ([]*upspin.DirEntry, error)
 
 	// GetBlocks returns the blocks for an entry at the given path. Performs no

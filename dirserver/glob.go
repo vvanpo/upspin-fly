@@ -68,19 +68,19 @@ func (d *dialed) list(ctx context.Context, op errors.Op, name upspin.PathName) (
 		return nil, errors.E(op, errors.Permission)
 	}
 
-	if !e.IsDir {
+	if !e.IsDir() {
 		// For Glob requests of `name + "/*"` or similar, if name is a regular
 		// file then there are no entries matching the pattern.
 		return nil, nil
 	}
 
-	es, err := d.State.List(ctx, p.Path())
+	es, err := d.state.List(ctx, p.Path())
 	if err != nil {
 		return nil, d.internalErr(ctx, op, p.Path(), err)
 	}
 
 	// Read access applies uniformly for files within a directory, but directories within a directory
-	canRead, err := d.can(ctx, a, access.Read, "")
+	canRead, err := d.can(ctx, a, access.Read, p)
 	if err != nil {
 		return nil, d.internalErr(ctx, op, p.Path(), err)
 	}

@@ -93,11 +93,8 @@ func get(tx *sql.Tx, name upspin.PathName) (*upspin.DirEntry, error) {
 		e.Attr = upspin.AttrLink
 		e.Link = upspin.PathName(link.String)
 	} else {
-		e.Attr = upspin.AttrIncomplete
 		e.Packing = upspin.Packing(packing.Byte)
-		if len(packdata) > 0 {
-			e.Packdata = packdata
-		}
+		e.Packdata = packdata
 	}
 
 	return e, nil

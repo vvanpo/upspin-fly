@@ -67,6 +67,8 @@ func (d *dialed) lookupContext(ctx context.Context, op errors.Op, name upspin.Pa
 // If a link is found anywhere along the path, upspin.ErrFollowLink is
 // returned.
 // All other returned errors are unsanitized internal errors.
+//
+// TODO return only sanitized errors.
 func (d *dialed) lookup(ctx context.Context, name upspin.PathName) (
 	p path.Parsed,
 	e *upspin.DirEntry,

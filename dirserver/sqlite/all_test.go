@@ -78,9 +78,6 @@ func TestPutLookupAll(t *testing.T) {
 	if e.Name != e.SignedName {
 		t.Errorf("signed name not equal to name: %s", e.SignedName)
 	}
-	if e.Attr != upspin.AttrIncomplete {
-		t.Errorf("baz not marked incomplete: %x", e.Attr)
-	}
 	if e.Blocks != nil {
 		t.Errorf("baz contains blocks: %v", e.Blocks)
 	}
