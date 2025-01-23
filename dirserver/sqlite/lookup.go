@@ -13,7 +13,7 @@ import (
 func (s State) LookupElem(ctx context.Context, p path.Parsed) (state.EntryId, path.Parsed, upspin.Attribute, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
-		return -1, path.Parsed{}, 0, fmt.Errorf("begin transaction for LookupElem(%s): %w", p, err)
+		return -1, path.Parsed{}, 0, fmt.Errorf("sqlite.LookupElem(%s): begin transaction: %w", p, err)
 	}
 
 	eid := state.EntryId(-1)
@@ -39,7 +39,7 @@ func (s State) LookupElem(ctx context.Context, p path.Parsed) (state.EntryId, pa
 	}
 
 	if err := tx.Commit(); err != nil {
-		return -1, path.Parsed{}, 0, fmt.Errorf("committing for LookupElem(%s): %w", p, err)
+		return -1, path.Parsed{}, 0, fmt.Errorf("sqlite.LookupElem(%s): commit: %w", p, err)
 	}
 
 	return eid, ep, attr, nil
@@ -103,7 +103,6 @@ func get(tx *sql.Tx, name upspin.PathName) (*upspin.DirEntry, error) {
 			e.sequence, o.timestamp, p.writer, p.dir, p.link, p.packing, p.packdata
 		FROM proj_entry e
 		INNER JOIN log_operation o ON e.op = o.id
-		INNER JOIN log_root r ON o.root = r.id
 		INNER JOIN log_put p ON o.put = p.id
 		WHERE e.name = ?`,
 		name,

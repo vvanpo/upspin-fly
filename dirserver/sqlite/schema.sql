@@ -45,5 +45,7 @@ CREATE TABLE proj_entry (
 	name TEXT PRIMARY KEY NOT NULL,
 	-- This must reference an op with a non-null `put` column
 	op REFERENCES log_operation UNIQUE NOT NULL,
-	sequence INTEGER NOT NULL
+	sequence INTEGER NOT NULL,
+	-- The parent directory. Only the root path of a tree references itself.
+	parent REFERENCES log_put NOT NULL
 );

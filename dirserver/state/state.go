@@ -49,9 +49,9 @@ type State interface {
 
 	// List retrieves all entries contained in the directory represented by the
 	// entry identifier. If the identifier does not represent a directory, the
-	// lookup will return no entries without error. File entries are returned
-	// with packdata but no blocks, yet are not marked incomplete.
-	List(context.Context, upspin.PathName) ([]*upspin.DirEntry, error)
+	// lookup will return no entries. File entries are returned with packdata
+	// but no blocks, yet are not marked incomplete.
+	List(context.Context, EntryId) ([]*upspin.DirEntry, error)
 
 	// GetBlocks returns the blocks for an entry at the given path. Performs no
 	// validation; the entry must exist and be a regular file.

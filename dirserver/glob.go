@@ -36,7 +36,11 @@ func (d *dialed) Glob(pattern string) ([]*upspin.DirEntry, error) {
 		return nil, errors.E(op, err)
 	}
 
-	// TODO fill out entries with blocks+packdata if not marked incomplete
+	for _, e := range es {
+		if e.IsRegular() && !e.IsIncomplete() {
+			// TODO add blocks to entry
+		}
+	}
 
 	return es, err
 }
@@ -51,7 +55,8 @@ func (d *dialed) list(ctx context.Context, op errors.Op, name upspin.PathName) (
 	// TODO serverutil.Glob() performs repeated lookups with list() (once per
 	// metacharacter in the pattern), so successive calls to lookup() include
 	// redundant partial lookups of the base path entries that were already
-	// retrieved.
+	// retrieved. This could be solved by closing over a map of paths ->
+	// EntryIds.
 	p, e, a, _, err := d.lookup(ctx, name)
 	if err == upspin.ErrFollowLink {
 		return []*upspin.DirEntry{e}, err
@@ -79,7 +84,7 @@ func (d *dialed) list(ctx context.Context, op errors.Op, name upspin.PathName) (
 		return nil, d.internalErr(ctx, op, p.Path(), err)
 	}
 
-	// Read access applies uniformly for files within a directory, but directories within a directory
+	// Read access applies uniformly for files within a directory.
 	canRead, err := d.can(ctx, a, access.Read, p)
 	if err != nil {
 		return nil, d.internalErr(ctx, op, p.Path(), err)
@@ -87,8 +92,8 @@ func (d *dialed) list(ctx context.Context, op errors.Op, name upspin.PathName) (
 
 	if !canRead {
 		for _, e := range es {
-			// Only directories and regular files are marked as incomplete.
-			if !e.IsLink() && !access.IsAccessControlFile(e.Name) {
+			// Only regular files are marked as incomplete.
+			if e.IsRegular() && !access.IsAccessControlFile(e.Name) {
 				e.MarkIncomplete()
 			}
 		}
