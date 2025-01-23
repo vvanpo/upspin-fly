@@ -14,6 +14,11 @@ import (
 	"upspin.io/upspin"
 )
 
+// EntryId is an opaque identifier returned and accepted by State
+// implementations that represent immutable entry records in the state. Only
+// EntryIds returned by a given State instance should ever be passed back.
+type EntryId int64
+
 // State provides a persistence interface for all data managed by the directory
 // server.
 //
@@ -23,7 +28,15 @@ type State interface {
 	// TODO LookupAll -> LookupElem and return only a slice of found path
 	// elements + the final element's attributes and an opaque id for the
 	// immutable record. Lookup should be split to LookupPath and LookupIds.
-	// List should only take an id.
+	// List should only take an EntryId.
+
+	// LookupElem finds the nearest element in the passed path that matches an
+	// entry in the tree. If the returned path is equal to the passed path, the
+	// path exists. The returned upspin.Attribute and EntryId match the final
+	// element in the returned path. Attribute is only ever one of AttrNone,
+	// AttrLink, or AttrDirectory. A negative EntryId indicates an error or
+	// that the root does not exist on this server for the requested path.
+	LookupElem(context.Context, path.Parsed) (EntryId, path.Parsed, upspin.Attribute, error)
 
 	// LookupAll retrieves the entries for all elements in a path. If a link is
 	// found in the path it is the last element returned, regardless of whether

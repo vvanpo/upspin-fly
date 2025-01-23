@@ -5,9 +5,45 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/vvanpo/upspin-fly/dirserver"
 	"upspin.io/path"
 	"upspin.io/upspin"
 )
+
+func (s State) LookupElem(ctx context.Context, p path.Parsed) (dirserver.EntryId, path.Parsed, upspin.Attribute, error) {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return -1, path.Parsed{}, 0, fmt.Errorf("begin transaction for LookupElem(%s): %w", p, err)
+	}
+
+	eid := dirserver.EntryId(-1)
+	var ep path.Parsed
+	var attr upspin.Attribute
+	for i := 0; i <= p.NElem(); i++ {
+		id, a, err := getAttr(tx, p.First(i).Path())
+		if err != nil {
+			tx.Commit()
+			return -1, path.Parsed{}, 0, err
+		} else if id == -1 {
+			break
+		}
+
+		eid = id
+		ep = p.First(i)
+		attr = a
+		if a != upspin.AttrDirectory {
+			// Only continue with lookups if we know there might be a child
+			// element.
+			break
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return -1, path.Parsed{}, 0, fmt.Errorf("committing for LookupElem(%s): %w", p, err)
+	}
+
+	return eid, ep, attr, nil
+}
 
 // LookupAll implements dirserver.State.
 func (s State) LookupAll(ctx context.Context, p path.Parsed) ([]*upspin.DirEntry, error) {
@@ -98,4 +134,38 @@ func get(tx *sql.Tx, name upspin.PathName) (*upspin.DirEntry, error) {
 	}
 
 	return e, nil
+}
+
+func getAttr(tx *sql.Tx, name upspin.PathName) (dirserver.EntryId, upspin.Attribute, error) {
+	r := tx.QueryRow(
+		`SELECT p.id, p.dir, p.link
+		FROM proj_entry e
+		INNER JOIN log_operation o ON e.op = o.id
+		INNER JOIN log_put p ON o.put = p.id
+		WHERE e.name = ?`,
+		name,
+	)
+
+	var eid dirserver.EntryId
+	var dir bool
+	var link sql.NullString
+	if err := r.Scan(&eid, &dir, &link); err != nil {
+		if err == sql.ErrNoRows {
+			return -1, 0, nil
+		}
+		return -1, 0, fmt.Errorf("querying entry: %w", err)
+	}
+
+	attr := upspin.AttrNone
+	if dir {
+		attr = upspin.AttrDirectory
+	} else if link.Valid {
+		attr = upspin.AttrLink
+	}
+
+	return eid, attr, nil
+}
+
+func (s State) getEntry(eid dirserver.EntryId) (*upspin.DirEntry, error) {
+	return nil, nil
 }

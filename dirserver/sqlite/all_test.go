@@ -139,3 +139,63 @@ func TestDelete(t *testing.T) {
 		t.Errorf("Root sequence not incremented on delete: %d", es[0].Sequence)
 	}
 }
+
+// LookupElem returns a negative id and no error when the root for the
+// requested does not exist.
+func TestLookupElemNoRoot(t *testing.T) {
+	ctx := context.Background()
+	s, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+
+	p, _ := path.Parse("a@b.com/foo/bar")
+	eid, rp, _, err := s.LookupElem(ctx, p)
+	if err != nil {
+		t.Error(err)
+	}
+	if eid >= 0 {
+		t.Errorf("non-negative entry identifier: %d", eid)
+	}
+	if rp.NElem() > 0 {
+		t.Errorf("wrong number of elements: %d", rp.NElem())
+	}
+}
+
+// LookupElem returns the root path when no other elements of the rquested path
+// match.
+func TestLookupElemOnlyRoot(t *testing.T) {
+	ctx := context.Background()
+	s, err := Open(":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	if err := s.Put(ctx, &upspin.DirEntry{
+		Attr:   upspin.AttrDirectory,
+		Writer: "a@b.com",
+		Name:   "a@b.com/",
+	}); err != nil {
+		t.Error(err)
+	}
+
+	p, _ := path.Parse("a@b.com/foo/bar")
+	eid, rp, _, err := s.LookupElem(ctx, p)
+	if err != nil {
+		t.Error(err)
+	}
+	if eid < 0 {
+		t.Errorf("invalid entry identifier: %d", eid)
+	}
+	if rp.String() != "a@b.com/" {
+		t.Errorf("path doesn't match root: %s", rp.String())
+	}
+}
+
+// LookupElem returns a partial path that prefixes the requested path when the
+// requested path does not exist.
+
+// LookupElem returns AttrNone when the returned entry is a file.
+
+// LookupElem returns AttrDirectory when the returned entry is a directory.
+
+// LookupElem returns AttrLink when the returned entry is a link.
