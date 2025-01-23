@@ -5,18 +5,18 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/vvanpo/upspin-fly/dirserver"
+	"github.com/vvanpo/upspin-fly/dirserver/state"
 	"upspin.io/path"
 	"upspin.io/upspin"
 )
 
-func (s State) LookupElem(ctx context.Context, p path.Parsed) (dirserver.EntryId, path.Parsed, upspin.Attribute, error) {
+func (s State) LookupElem(ctx context.Context, p path.Parsed) (state.EntryId, path.Parsed, upspin.Attribute, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
 		return -1, path.Parsed{}, 0, fmt.Errorf("begin transaction for LookupElem(%s): %w", p, err)
 	}
 
-	eid := dirserver.EntryId(-1)
+	eid := state.EntryId(-1)
 	var ep path.Parsed
 	var attr upspin.Attribute
 	for i := 0; i <= p.NElem(); i++ {
@@ -45,7 +45,7 @@ func (s State) LookupElem(ctx context.Context, p path.Parsed) (dirserver.EntryId
 	return eid, ep, attr, nil
 }
 
-// LookupAll implements dirserver.State.
+// LookupAll implements state.State.
 func (s State) LookupAll(ctx context.Context, p path.Parsed) ([]*upspin.DirEntry, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
@@ -76,7 +76,7 @@ func (s State) LookupAll(ctx context.Context, p path.Parsed) ([]*upspin.DirEntry
 	return es, nil
 }
 
-// Lookup implements dirserver.State.
+// Lookup implements state.State.
 func (s State) Lookup(ctx context.Context, name upspin.PathName) (*upspin.DirEntry, error) {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {
@@ -136,7 +136,7 @@ func get(tx *sql.Tx, name upspin.PathName) (*upspin.DirEntry, error) {
 	return e, nil
 }
 
-func getAttr(tx *sql.Tx, name upspin.PathName) (dirserver.EntryId, upspin.Attribute, error) {
+func getAttr(tx *sql.Tx, name upspin.PathName) (state.EntryId, upspin.Attribute, error) {
 	r := tx.QueryRow(
 		`SELECT p.id, p.dir, p.link
 		FROM proj_entry e
@@ -146,7 +146,7 @@ func getAttr(tx *sql.Tx, name upspin.PathName) (dirserver.EntryId, upspin.Attrib
 		name,
 	)
 
-	var eid dirserver.EntryId
+	var eid state.EntryId
 	var dir bool
 	var link sql.NullString
 	if err := r.Scan(&eid, &dir, &link); err != nil {
@@ -166,6 +166,6 @@ func getAttr(tx *sql.Tx, name upspin.PathName) (dirserver.EntryId, upspin.Attrib
 	return eid, attr, nil
 }
 
-func (s State) getEntry(eid dirserver.EntryId) (*upspin.DirEntry, error) {
+func (s State) getEntry(eid state.EntryId) (*upspin.DirEntry, error) {
 	return nil, nil
 }

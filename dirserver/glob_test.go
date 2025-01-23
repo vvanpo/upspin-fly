@@ -10,7 +10,10 @@ import (
 )
 
 func TestGlob(t *testing.T) {
-	st, _ := sqlite.Open(":memory:")
+	st, err := sqlite.Open(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer st.Close()
 	ctx := context.Background()
 	st.Put(ctx, &upspin.DirEntry{
