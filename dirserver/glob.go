@@ -28,7 +28,9 @@ func (d *dialed) Glob(pattern string) ([]*upspin.DirEntry, error) {
 	// checks, and once they've completed elide what's needed from the result.~~
 	// Or, change the State interface to return and accept opaque entry
 	// identifiers on lookups which map to the append-only log, which foregoes
-	// the need for a transaction.
+	// the need for a transaction. This requires a tree of entries navigable
+	// from the root for every sequence update, now I understand why the
+	// reference implementation uses a Merkle tree.
 	es, err := serverutil.Glob(pattern, lookup, ls)
 	if err != nil && err != upspin.ErrFollowLink {
 		// list() returns errors decorated with op, but serverutil.Glob()

@@ -9,10 +9,16 @@ import (
 	"upspin.io/upspin"
 )
 
-// EntryId is an opaque identifier returned and accepted by State
-// implementations that represent immutable entry records in the state. Only
-// EntryIds returned by a given State instance should ever be passed back.
-type EntryId int64
+// Entry is a partial upspin.DirEntry. It identifies a file, directory or link
+// in an Upspin tree at a point in time; it represents an immutable record
+// managed by State and should only be created by State implementations. It
+// should never be modified before being passed to State methods. Attribute is
+// only ever one of AttrNone, AttrLink, or AttrDirectory.
+type Entry struct {
+	Path path.Parsed
+	Attr upspin.Attribute
+	Seq  int64
+}
 
 // State provides a persistence interface for all data managed by the directory
 // server.
@@ -20,18 +26,17 @@ type EntryId int64
 // Returned errors should generally be regarded as internal faults.
 type State interface {
 
-	// TODO LookupAll -> LookupElem and return only a slice of found path
-	// elements + the final element's attributes and an opaque id for the
-	// immutable record. Lookup should be split to LookupPath and LookupIds.
-	// List should only take an EntryId.
-
 	// LookupElem finds the nearest element in the passed path that matches an
 	// entry in the tree. If the returned path is equal to the passed path, the
-	// path exists. The returned upspin.Attribute and EntryId match the final
-	// element in the returned path. Attribute is only ever one of AttrNone,
-	// AttrLink, or AttrDirectory. A negative EntryId indicates an error or
-	// that the root does not exist on this server for the requested path.
-	LookupElem(context.Context, path.Parsed) (EntryId, path.Parsed, upspin.Attribute, error)
+	// path exists. The returned entry matches the final element in the
+	// returned path. An empty entry indicates an error or that the root does
+	// not exist on this server for the requested path.
+	LookupElem(context.Context, path.Parsed) (Entry, error)
+
+	// List retrieves all entries contained in the directory at the given path
+	// and sequence. If the entry does not represent a directory, the lookup
+	// will return no entries.
+	List(context.Context, Entry) ([]Entry, error)
 
 	// LookupAll retrieves the entries for all elements in a path. If a link is
 	// found in the path it is the last element returned, regardless of whether
@@ -47,14 +52,8 @@ type State interface {
 	// complete.
 	Lookup(context.Context, upspin.PathName) (*upspin.DirEntry, error)
 
-	// List retrieves all entries contained in the directory represented by the
-	// entry identifier. If the identifier does not represent a directory, the
-	// lookup will return no entries. File entries are returned with packdata
-	// but no blocks, yet are not marked incomplete.
-	List(context.Context, EntryId) ([]*upspin.DirEntry, error)
-
-	// GetBlocks returns the blocks for an entry at the given path. Performs no
-	// validation; the entry must exist and be a regular file.
+	// Get returns the full directory entry for an entry at the given path and
+	// sequence. Performs no validation; the entry must exist.
 
 	// Put persists a put operation. Performs no validation; all intermediate
 	// elements must exist and be directories or it will result in state
